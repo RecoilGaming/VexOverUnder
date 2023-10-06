@@ -1,16 +1,68 @@
-// ---- START VEXCODE CONFIGURED DEVICES ----
-// Robot Configuration:
-// [Name]               [Type]        [Port(s)]
-// Controller1          controller                    
-// Drivetrain           drivetrain    2, 18, 1, 13    
-// Catapult             motor_group   12, 19          
-// Intake               motor         20              
-// PneumaticE           digital_out   E               
-// PneumaticH           digital_out   H               
-// ---- END VEXCODE CONFIGURED DEVICES ----
-
 #include "vex.h"
 using namespace vex;
+
+using signature = vision::signature;
+using code = vision::code;
+
+// constants
+const gearSetting redCartridge = ratio36_1;
+const gearSetting greenCartridge = ratio18_1;
+const gearSetting blueCartridge = ratio6_1;
+
+// robot configuration
+brain robotBrain;
+controller robotController = controller(primary);
+motor leftMotorA = motor(PORT2, greenCartridge, false);
+motor leftMotorB = motor(PORT18, greenCartridge, false);
+motor_group leftDrive = motor_group(leftMotorA, leftMotorB);
+motor rightMotorA = motor(PORT1, greenCartridge, true);
+motor rightMotorB = motor(PORT13, greenCartridge, true);
+motor_group rightDrive = motor_group(rightMotorA, rightMotorB);
+drivetrain robotDrive = drivetrain(leftDrive, rightDrive, 300, 324, 203.2, mm, 1);
+motor catapultMotorA = motor(PORT12, redCartridge, false);
+motor catapultMotorB = motor(PORT19, redCartridge, true);
+motor_group robotCatapult = motor_group(catapultMotorA, catapultMotorB);
+motor robotIntake = motor(PORT20, blueCartridge, false);
+rotation catapultSensor = rotation(PORT15);
+digital_out pneumaticE = digital_out(robotBrain.ThreeWirePort.E);
+digital_out pneumaticH = digital_out(robotBrain.ThreeWirePort.H);
+
+// controller input
+bool stopLeft = true;
+bool stopRight = true;
+
+int controllerInput() {
+  while (true) {
+    int speedLeft = robotController.Axis3.position() + robotController.Axis1.position();
+    int speedRight = robotController.Axis3.position() - robotController.Axis1.position();
+    
+    if (speedLeft < 5 && speedLeft > -5) {
+        if (stopLeft) {
+            leftDrive.stop();
+            stopLeft = false;
+        }
+    } else stopLeft = true;
+
+    if (speedRight < 5 && speedRight > -5) {
+        if (stopRight) {
+            rightDrive.stop();
+            stopRight = false;
+        }
+    } else stopRight = true;
+    
+    if (stopLeft) {
+        leftDrive.setVelocity(speedLeft, percent);
+        leftDrive.spin(forward);
+    }
+
+    if (stopRight) {
+        rightDrive.setVelocity(speedRight, percent);
+        rightDrive.spin(forward);
+    }
+    
+    wait(20, msec);
+  } return 0;
+}
 
 // function definitions
 void runIntake(void);
@@ -20,7 +72,6 @@ void resetAll(void);
 
 void auton1(void);
 void auton2(void);
-void auton3(void);
 
 // competition global
 competition Competition;
@@ -31,79 +82,90 @@ bool wasPressed1 = false, isPressed1 = false;
 bool wasPressed2 = false, isPressed2 = false;
 int original = 0;
 
-// catapult globals
-bool up = false;
-
-void reset() {
-  double pos = Catapult.position(degrees);
+// modulo function
+void resetSensor(void) {
+  double pos = catapultSensor.position(deg);
   
   while (pos >= 360) pos -= 360;
   while (pos <= -360) pos += 360;
 
-  if (Catapult.position(degrees) != pos) Catapult.setPosition(pos, degrees);
+  if (catapultSensor.position(deg) != pos) catapultSensor.setPosition(pos, deg);
+}
+
+// spin catapult with sensor
+void spinCatapultTo(int pos, directionType dir) {
+  while (catapultSensor.position(degrees) != pos) {
+    robotCatapult.spin(dir, 100, rpm);
+  } robotCatapult.stop();
 }
 
 // setup robot
 void preAuton(void) {
   // initialization
-  vexcodeInit();
-  Catapult.setStopping(hold);
+  task controllerInputTask(controllerInput);
+  robotCatapult.setStopping(hold);
   
   // setting velocities
-  Intake.setVelocity(200, rpm);
-  Catapult.setVelocity(100, rpm);
-
-  // extending pneumatics
-  PneumaticE.set(true);
-  PneumaticH.set(true);
-
-  // catapult down
-  // 275 - 8 bands
-  // 255 - 6 bands
-  // 310 - sharvil
+  robotIntake.setVelocity(200, rpm);
+  robotCatapult.setVelocity(100, rpm);
+  catapultSensor.setPosition(0, deg);
 }
 
 // autonomous function
 void autonomous(void) {
+  // extending pneumatics
+  pneumaticE.set(true);
+  pneumaticH.set(true);
+
   // reset catapult
-  reset();
-  Catapult.setPosition(0,degrees);
+  // resetSensor();
+  robotCatapult.setPosition(0, deg);
 
   // catapult down
-  Catapult.spinToPosition(0, degrees);
-  Catapult.spinToPosition(-350, degrees);
+  // spinCatapultTo(-90, fwd);
+  robotCatapult.spinToPosition(0, deg);
+  robotCatapult.spinToPosition(-350, deg);
   
   // drivetrain settings
-  Drivetrain.setDriveVelocity(175, rpm);
-  Drivetrain.setStopping(hold);
+  robotDrive.setDriveVelocity(175, rpm);
+  robotDrive.setStopping(hold);
 
   // auton function
-  // auton1();
+  auton1();
 }
 
 // driver controlled function
 void usercontrol(void) {
+  // extending pneumatics
+  pneumaticE.set(true);
+  pneumaticH.set(true);
+
   // drivetrain settings
-  Drivetrain.setDriveVelocity(200, rpm);
-  Drivetrain.setTurnVelocity(200, rpm);
-  Drivetrain.setStopping(coast);
+  robotDrive.setDriveVelocity(200, rpm);
+  robotDrive.setTurnVelocity(200, rpm);
+  robotDrive.setStopping(coast);
 
   // catapult down
-  Catapult.spinToPosition(0, degrees);
-  Catapult.spinToPosition(-350, degrees);
+  // robotCatapult.spinToPosition(0, deg);
+  spinCatapultTo(-90, fwd);
+  // robotCatapult.spinToPosition(-350, deg);
 
   while (1) {
     // reset catapult encoders
-    reset();
+    resetSensor();
 
     // robot functions
     runIntake();
-    Controller1.ButtonL1.pressed(fireCatapult);
-    Controller1.ButtonL2.pressed(halfCatapult);
-    Controller1.ButtonX.pressed(resetAll);
+    robotController.ButtonL1.pressed(halfCatapult);
+    robotController.ButtonL2.pressed(fireCatapult);
+    robotController.ButtonX.pressed(resetAll);
+
+    // catapult position
+    robotBrain.Screen.print(catapultSensor.position(deg));
 
     // waiting
     wait(50, msec);
+    robotBrain.Screen.clearLine();
   }
 }
 
@@ -123,8 +185,8 @@ int main() {
 // intake function
 void runIntake(void) {
   // detect controller input
-  isPressed1 = Controller1.ButtonR2.pressing();
-  isPressed2 = Controller1.ButtonR1.pressing();
+  isPressed1 = robotController.ButtonR2.pressing();
+  isPressed2 = robotController.ButtonR1.pressing();
 
   if (!isPressed1 || !isPressed2) {
     // toggle intake / outtake
@@ -139,116 +201,107 @@ void runIntake(void) {
     }
 
     // powering motors
-    if (isIntaking && (!isOuttaking || original == 2)) { Intake.spin(reverse); isOuttaking = 0; original = 1; }
-    else if (isOuttaking && (!isIntaking || original == 1)) { Intake.spin(forward); isIntaking = 0; original = 2; }
-    else Intake.stop();
+    if (isIntaking && (!isOuttaking || original == 2)) { robotIntake.spin(reverse); isOuttaking = 0; original = 1; }
+    else if (isOuttaking && (!isIntaking || original == 1)) { robotIntake.spin(forward); isIntaking = 0; original = 2; }
+    else robotIntake.stop();
 
     // setting booleans
     wasPressed1 = isPressed1, wasPressed2 = isPressed2;
-  } else { Intake.stop(); isIntaking = 0; isOuttaking = 0; }
+  } else { robotIntake.stop(); isIntaking = 0; isOuttaking = 0; }
 }
 
 // catapult function
-// void fireCatapult(void) { Catapult.spinFor(reverse, 1, turns); }
-
 void fireCatapult(void) {
-  // if (up == true) {
-  //   Catapult.spinToPosition(-365, degrees);
-  //   up = false;
-  // } else {
-  //   Catapult.spinToPosition(-350, degrees);
-  //   up = true;
-  // }
-
-  Catapult.spinToPosition(-365, degrees);
-  reset();
-  Catapult.spinToPosition(-350, degrees);
+  robotCatapult.spinToPosition(-365, deg);
+  resetSensor();
+  robotCatapult.spinToPosition(-350, deg);
 }
 
 void halfCatapult(void) {
   // if (up == true) {
-  //   Catapult.spinToPosition(-365, degrees);
+  //   robotCatapult.spinToPosition(-365, deg);
   //   up = false;
   // } else {
-  //   Catapult.spinToPosition(-250, degrees);
+  //   robotCatapult.spinToPosition(-250, deg);
   //   up = true;
   // }
 
-  Catapult.spinToPosition(-365, degrees);
-  reset();
-  Catapult.spinToPosition(-250, degrees);
+  robotCatapult.spinToPosition(-365, deg);
+  resetSensor();
+  robotCatapult.spinToPosition(-250, deg);
 }
 
 void resetAll(void) {
-  Catapult.spinToPosition(0, degrees);
-  PneumaticE.set(false);
-  PneumaticH.set(false);
+  robotCatapult.spinToPosition(0, deg);
+  pneumaticE.set(false);
+  pneumaticH.set(false);
 }
 
 // auton on same team side
 void auton1(void) {
   // move to goal
-  Drivetrain.driveFor(forward, 23.5, inches);
-  Drivetrain.turnFor(left, 70, degrees);
-  Drivetrain.driveFor(forward, 44, inches);
-  Drivetrain.turnFor(right, 70, degrees);
+  robotDrive.driveFor(forward, 23, inches);
+  robotDrive.turnFor(left, 70, deg);
+  robotDrive.driveFor(forward, 44, inches);
+  robotDrive.turnFor(right, 70, deg);
 
   // drop triball
-  Intake.spin(forward);
+  robotIntake.spin(forward);
   wait(1, sec);
-  Intake.stop();
+  robotIntake.stop();
 
   // push triball in
-  Drivetrain.driveFor(reverse, 6, inches);
-  Drivetrain.turnFor(right, 130, degrees);
-  Drivetrain.setDriveVelocity(200, rpm);
-  Drivetrain.driveFor(reverse, 15, inches);
+  robotDrive.driveFor(reverse, 6, inches, false);
+  robotDrive.turnFor(right, 130, deg);
+  robotDrive.setDriveVelocity(200, rpm);
+  robotDrive.driveFor(reverse, 15, inches);
 
   // drive out
   wait(100, msec);
-  Drivetrain.driveFor(forward, 1, inches);
-  Drivetrain.setDriveVelocity(175, rpm);
+  robotDrive.driveFor(forward, 1, inches);
+  robotDrive.setDriveVelocity(175, rpm);
 
   // move toward triball
-  Drivetrain.turnFor(left, 17, degrees);
-  Intake.spin(reverse);
-  Drivetrain.driveFor(forward, 29, inches);
+  robotDrive.turnFor(left, 17, deg);
+  robotIntake.spin(reverse);
+  robotDrive.driveFor(forward, 29, inches);
 
   // aim catapult
   wait(500, msec);
-  Drivetrain.turnFor(right, 130, degrees);
+  robotIntake.stop();
+  robotDrive.turnFor(right, 130, deg);
 }
 
 // auton on other team side
 void auton2(void) {
   // move to goal
-  Drivetrain.driveFor(forward, 24, inches);
-  Drivetrain.turnFor(right, 70, degrees);
-  Drivetrain.driveFor(forward, 45, inches);
-  Drivetrain.turnFor(left, 70, degrees);
+  robotDrive.driveFor(forward, 24, inches);
+  robotDrive.turnFor(right, 70, deg);
+  robotDrive.driveFor(forward, 42.5, inches);
+  robotDrive.turnFor(left, 70, deg);
 
   // drop triball
-  Intake.spin(forward);
+  robotIntake.spin(forward);
   wait(1, sec);
-  Intake.stop();
+  robotIntake.stop();
 
   // push triball in
-  Drivetrain.driveFor(reverse, 6, inches);
-  Drivetrain.turnFor(left, 130, degrees);
-  Drivetrain.setDriveVelocity(200, rpm);
-  Drivetrain.driveFor(reverse, 15, inches);
+  robotDrive.driveFor(reverse, 6, inches);
+  robotDrive.turnFor(left, 130, deg);
+  robotDrive.setDriveVelocity(200, rpm);
+  robotDrive.driveFor(reverse, 15, inches);
 
   // drive out
   wait(100, msec);
-  Drivetrain.driveFor(forward, 1, inches);
-  Drivetrain.setDriveVelocity(175, rpm);
+  robotDrive.driveFor(forward, 15, inches);
+  robotDrive.setDriveVelocity(175, rpm);
 
-  // move toward triball
-  // Drivetrain.turnFor(left, 17, degrees);
-  // Intake.spin(reverse);
-  // Drivetrain.driveFor(forward, 29, inches);
+  // // turn to triball
+  // robotDrive.turnFor(left, 35, deg);
+  // robotDrive.driveFor(forward, 2.5, inches);
 
-  // aim catapult
-  // wait(500, msec);
-  // Drivetrain.turnFor(right, 130, degrees);
+  // // intake triball
+  // robotIntake.spin(reverse);
+  // wait(1, sec);
+  // robotIntake.stop();
 }

@@ -84,12 +84,13 @@ int original = 0;
 
 // modulo function
 void resetSensor(void) {
-  double pos = catapultSensor.position(deg);
+  double pos = robotCatapult.position(deg);// catapultSensor.position(deg);
   
   while (pos >= 360) pos -= 360;
   while (pos <= -360) pos += 360;
 
-  if (catapultSensor.position(deg) != pos) catapultSensor.setPosition(pos, deg);
+  if (robotCatapult.position(deg) != pos) robotCatapult.setPosition(pos, deg);
+  // if (catapultSensor.position(deg) != pos) catapultSensor.setPosition(pos, deg);
 }
 
 // spin catapult with sensor
@@ -104,9 +105,10 @@ void preAuton(void) {
   // initialization
   task controllerInputTask(controllerInput);
   robotCatapult.setStopping(hold);
+  robotCatapult.setPosition(0, deg);
   
   // setting velocities
-  robotIntake.setVelocity(200, rpm);
+  robotIntake.setVelocity(600, rpm);
   robotCatapult.setVelocity(100, rpm);
   catapultSensor.setPosition(0, deg);
 }
@@ -119,7 +121,6 @@ void autonomous(void) {
 
   // reset catapult
   // resetSensor();
-  robotCatapult.setPosition(0, deg);
 
   // catapult down
   // spinCatapultTo(-90, fwd);
@@ -146,9 +147,9 @@ void usercontrol(void) {
   robotDrive.setStopping(coast);
 
   // catapult down
-  // robotCatapult.spinToPosition(0, deg);
-  spinCatapultTo(-90, fwd);
-  // robotCatapult.spinToPosition(-350, deg);
+  robotCatapult.spinToPosition(0, deg);
+  robotCatapult.spinToPosition(-183, deg);
+  // spinCatapultTo(-90, fwd);
 
   while (1) {
     // reset catapult encoders
@@ -161,7 +162,8 @@ void usercontrol(void) {
     robotController.ButtonX.pressed(resetAll);
 
     // catapult position
-    robotBrain.Screen.print(catapultSensor.position(deg));
+    // robotBrain.Screen.print(catapultSensor.position(deg));
+    robotBrain.Screen.print(robotCatapult.position(deg));
 
     // waiting
     wait(50, msec);
@@ -212,9 +214,9 @@ void runIntake(void) {
 
 // catapult function
 void fireCatapult(void) {
-  robotCatapult.spinToPosition(-365, deg);
+  robotCatapult.spinToPosition(-185, deg);
   resetSensor();
-  robotCatapult.spinToPosition(-350, deg);
+  robotCatapult.spinToPosition(-183, deg);
 }
 
 void halfCatapult(void) {
@@ -226,9 +228,9 @@ void halfCatapult(void) {
   //   up = true;
   // }
 
-  robotCatapult.spinToPosition(-365, deg);
+  robotCatapult.spinToPosition(-185, deg);
   resetSensor();
-  robotCatapult.spinToPosition(-250, deg);
+  robotCatapult.spinToPosition(-127, deg);
 }
 
 void resetAll(void) {

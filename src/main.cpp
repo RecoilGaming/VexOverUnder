@@ -72,6 +72,7 @@ void resetAll(void);
 
 void auton1(void);
 void auton2(void);
+void auton3(void);
 
 // competition global
 competition Competition;
@@ -120,19 +121,19 @@ void autonomous(void) {
   pneumaticH.set(true);
 
   // reset catapult
-  // resetSensor();
+  resetSensor();
 
   // catapult down
   // spinCatapultTo(-90, fwd);
   robotCatapult.spinToPosition(0, deg);
-  robotCatapult.spinToPosition(-350, deg);
+  robotCatapult.spinToPosition(-172, deg);
   
   // drivetrain settings
   robotDrive.setDriveVelocity(175, rpm);
   robotDrive.setStopping(hold);
 
   // auton function
-  auton1();
+  auton3();
 }
 
 // driver controlled function
@@ -148,7 +149,7 @@ void usercontrol(void) {
 
   // catapult down
   robotCatapult.spinToPosition(0, deg);
-  robotCatapult.spinToPosition(-183, deg);
+  robotCatapult.spinToPosition(-176, deg);
   // spinCatapultTo(-90, fwd);
 
   while (1) {
@@ -214,9 +215,9 @@ void runIntake(void) {
 
 // catapult function
 void fireCatapult(void) {
-  robotCatapult.spinToPosition(-185, deg);
+  robotCatapult.spinToPosition(-365, deg);
   resetSensor();
-  robotCatapult.spinToPosition(-183, deg);
+  robotCatapult.spinToPosition(-176, deg);
 }
 
 void halfCatapult(void) {
@@ -228,9 +229,9 @@ void halfCatapult(void) {
   //   up = true;
   // }
 
-  robotCatapult.spinToPosition(-185, deg);
+  robotCatapult.spinToPosition(-365, deg);
   resetSensor();
-  robotCatapult.spinToPosition(-127, deg);
+  robotCatapult.spinToPosition(-122, deg);
 }
 
 void resetAll(void) {
@@ -306,4 +307,14 @@ void auton2(void) {
   // robotIntake.spin(reverse);
   // wait(1, sec);
   // robotIntake.stop();
+}
+
+// auton for skills
+void auton3(void) {
+  while (1) {
+    robotCatapult.spinToPosition(-365, deg);
+    resetSensor();
+    wait(200, msec);
+    robotCatapult.spinToPosition(-172, deg);
+  }
 }

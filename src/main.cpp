@@ -106,6 +106,8 @@ void preAuton(void) {
   // initialization
   task controllerInputTask(controllerInput);
   robotCatapult.setStopping(hold);
+
+
   robotCatapult.setPosition(0, deg);
   
   // setting velocities
@@ -133,7 +135,7 @@ void autonomous(void) {
   robotDrive.setStopping(hold);
 
   // auton function
-  auton3();
+  auton2();
 }
 
 // driver controlled function
@@ -243,60 +245,66 @@ void resetAll(void) {
 // auton on same team side
 void auton1(void) {
   // move to goal
-  robotDrive.driveFor(forward, 23, inches);
-  robotDrive.turnFor(left, 70, deg);
   robotDrive.driveFor(forward, 44, inches);
-  robotDrive.turnFor(right, 70, deg);
+  robotDrive.turnFor(right, 67, deg);
 
   // drop triball
   robotIntake.spin(forward);
-  wait(1, sec);
+  wait(500, msec);
   robotIntake.stop();
 
   // push triball in
-  robotDrive.driveFor(reverse, 6, inches, false);
+  robotDrive.driveFor(reverse, 6, inches);
   robotDrive.turnFor(right, 130, deg);
   robotDrive.setDriveVelocity(200, rpm);
-  robotDrive.driveFor(reverse, 15, inches);
+  robotDrive.driveFor(reverse, 14, inches);
 
   // drive out
   wait(100, msec);
-  robotDrive.driveFor(forward, 1, inches);
+  robotDrive.driveFor(forward, 3, inches);
   robotDrive.setDriveVelocity(175, rpm);
 
   // move toward triball
-  robotDrive.turnFor(left, 17, deg);
+  robotDrive.turnFor(left, 13, deg);
   robotIntake.spin(reverse);
-  robotDrive.driveFor(forward, 29, inches);
+  robotDrive.driveFor(forward, 28, inches);
 
-  // aim catapult
+  // turn around
+  wait(200, msec);
+  robotIntake.stop();
+
+  // move toward goal
+  robotDrive.turnFor(right, 118, deg);
+  robotDrive.driveFor(forward, 21, inches);
+  robotDrive.turnFor(right, 25, deg);
+  robotDrive.driveFor(forward, 3, inches);
+
+  // drop triball
+  robotIntake.spin(forward);
   wait(500, msec);
   robotIntake.stop();
-  robotDrive.turnFor(right, 130, deg);
 }
 
 // auton on other team side
 void auton2(void) {
   // move to goal
-  robotDrive.driveFor(forward, 24, inches);
-  robotDrive.turnFor(right, 70, deg);
-  robotDrive.driveFor(forward, 42.5, inches);
+  robotDrive.driveFor(forward, 42, inches);
   robotDrive.turnFor(left, 70, deg);
 
   // drop triball
   robotIntake.spin(forward);
-  wait(1, sec);
+  wait(500, msec);
   robotIntake.stop();
 
   // push triball in
   robotDrive.driveFor(reverse, 6, inches);
-  robotDrive.turnFor(left, 130, deg);
+  robotDrive.turnFor(left, 133, deg);
   robotDrive.setDriveVelocity(200, rpm);
-  robotDrive.driveFor(reverse, 15, inches);
+  robotDrive.driveFor(reverse, 14, inches);
 
   // drive out
   wait(100, msec);
-  robotDrive.driveFor(forward, 15, inches);
+  robotDrive.driveFor(forward, 3, inches);
   robotDrive.setDriveVelocity(175, rpm);
 
   // // turn to triball

@@ -73,6 +73,7 @@ void resetAll(void);
 void auton1(void);
 void auton2(void);
 void auton3(void);
+void auton4(void);
 
 // competition global
 competition Competition;
@@ -107,7 +108,6 @@ void preAuton(void) {
   task controllerInputTask(controllerInput);
   robotCatapult.setStopping(hold);
 
-
   robotCatapult.setPosition(0, deg);
   
   // setting velocities
@@ -135,7 +135,7 @@ void autonomous(void) {
   robotDrive.setStopping(hold);
 
   // auton function
-  auton2();
+  auton1();
 }
 
 // driver controlled function
@@ -151,7 +151,7 @@ void usercontrol(void) {
 
   // catapult down
   robotCatapult.spinToPosition(0, deg);
-  robotCatapult.spinToPosition(-176, deg);
+  robotCatapult.spinToPosition(-172, deg);
   // spinCatapultTo(-90, fwd);
 
   while (1) {
@@ -219,7 +219,7 @@ void runIntake(void) {
 void fireCatapult(void) {
   robotCatapult.spinToPosition(-365, deg);
   resetSensor();
-  robotCatapult.spinToPosition(-176, deg);
+  robotCatapult.spinToPosition(-172, deg);
 }
 
 void halfCatapult(void) {
@@ -322,7 +322,19 @@ void auton3(void) {
   while (1) {
     robotCatapult.spinToPosition(-365, deg);
     resetSensor();
-    wait(200, msec);
     robotCatapult.spinToPosition(-172, deg);
+    wait(200, msec);
   }
+}
+
+void auton4(void) {
+  robotDrive.setDriveVelocity(200, rpm);
+  robotDrive.drive(reverse);
+  wait(3, sec);
+  robotDrive.stop();
+  robotDrive.driveFor(fwd, 10, inches);
+  robotDrive.drive(reverse);
+  wait(3, sec);
+  robotDrive.stop();
+  robotDrive.driveFor(fwd, 10, inches);
 }

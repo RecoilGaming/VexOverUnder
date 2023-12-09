@@ -21,8 +21,8 @@ motor_group rightDrive = motor_group(driveRF, driveRB);
 drivetrain robotDrive = drivetrain(leftDrive, rightDrive, 4*M_PI, 11, 11, inches, 3/7);
 
 motor robotIntake = motor(PORT16 , blueCartridge, true);
-motor leftCata = motor(PORT14, redCartridge, true);
-motor rightCata = motor(PORT15, redCartridge, false);
+motor leftCata = motor(PORT15, redCartridge, false);
+motor rightCata = motor(PORT13, redCartridge, true);
 motor_group robotCata = motor_group(leftCata, rightCata);
 rotation cataSensor = rotation(PORT4);
 
@@ -31,12 +31,14 @@ digital_out rightWing = digital_out(robotBrain.ThreeWirePort.E);
 
 // function definitions
 void resetCata(void);
-void increaseCounters(void);
+void updateBools(void);
 
 int runDrivetrain(void);
 void toggleIntake(void);
-void toggleOuttake(void);
+void startOuttake(void);
+void stopOuttake(void);
 void toggleCatapult(void);
+void saveCatapult(void);
 void toggleWings(void);
 void toggleLeftWing(void);
 void toggleRightWing(void);
@@ -53,7 +55,7 @@ competition Competition;
 // robot globals
 bool stopLeft = 1;
 bool stopRight = 1;
-int outtakeTime = 0;
+bool stopIntake = 0;
 
 // spin catapult with sensor
 void spinCatapultTo(int pos, directionType dir) {
@@ -61,6 +63,10 @@ void spinCatapultTo(int pos, directionType dir) {
     robotCata.spin(dir, 100, rpm);
   } robotCata.stop();
 }
+
+// auton functions
+void drive(double dst) { robotDrive.driveFor(dst/16, mm); wait(100, msec); }
+void turn(turnType dir, double rot) { robotDrive.turnFor(dir, rot/270, deg); wait(100, msec); }
 
 // robot setup
 void preAuton(void) {
@@ -75,7 +81,6 @@ void preAuton(void) {
   robotCata.setStopping(hold);
 
   robotCata.setPosition(0, deg);
-  robotCata.spinToPosition(60, deg);
 }
 
 // autonomous function
@@ -87,20 +92,25 @@ void usercontrol(void) {
   robotDrive.setTurnVelocity(100, percent);
   robotDrive.setStopping(brake);
 
+  drive(-20);
+  robotCata.spinFor(60, deg);
+
   while (1) {
-    increaseCounters();
     resetCata();
 
     robotController.ButtonL2.pressed(toggleCatapult);
     robotController.ButtonR2.pressed(toggleIntake);
-    robotController.ButtonR2.released(toggleOuttake);
+    robotController.ButtonX.pressed(startOuttake);
+    robotController.ButtonX.released(stopOuttake);
     robotController.ButtonA.pressed(toggleWings);
+    robotController.ButtonB.pressed(saveCatapult);
     robotController.ButtonL1.pressed(toggleLeftWing);
     robotController.ButtonR1.pressed(toggleRightWing);
 
-    if (outtakeTime > 25) { robotIntake.stop(); outtakeTime = 0; }
+    updateBools();
 
-    robotBrain.Screen.print(robotCata.position(deg));
+    robotBrain.Screen.print(stopIntake);
+    // robotBrain.Screen.print(robotCata.position(deg));
     wait(50, msec);
     robotBrain.Screen.clearLine();
   }
@@ -118,7 +128,7 @@ int main() {
 
 // reset catapult
 void resetCata(void) {
-  double pos = robotCata.position(deg);// catapultSensor.position(deg);
+  double pos = robotCata.position(deg); // catapultSensor.position(deg);
   
   while (pos >= 360) pos -= 360;
   while (pos <= -360) pos += 360;
@@ -127,10 +137,8 @@ void resetCata(void) {
   // if (catapultSensor.position(deg) != pos) catapultSensor.setPosition(pos, deg);
 }
 
-// increase counters
-void increaseCounters(void) {
-  if (robotIntake.velocity(percent)) outtakeTime++;
-}
+// update booleans
+void updateBools(void) { stopIntake = robotController.ButtonR2.pressing(); }
 
 // drivetrain function
 int runDrivetrain(void) {
@@ -167,21 +175,22 @@ int runDrivetrain(void) {
 }
 
 // intake function
-void toggleIntake(void) { robotIntake.spin(forward); }
+void toggleIntake(void) {
+  if (!stopIntake) {
+    if (robotIntake.velocity(percent) > 0) robotIntake.stop();
+    else robotIntake.spin(forward);
+  }
+}
 
 // outtake function
-void toggleOuttake(void) {
-  outtakeTime = 0;
-  robotIntake.spin(reverse);
-}
+void startOuttake(void) { robotIntake.spin(reverse); }
+void stopOuttake(void) { robotIntake.stop(); }
 
 // catapult function
-void toggleCatapult(void) {
-  robotCata.spinFor(360, deg);
-  // robotCata.spinToPosition(-365, deg);
-  // resetCata();
-  // robotCata.spinToPosition(-20, deg);
-}
+void toggleCatapult(void) { robotCata.spinFor(360, deg); }
+
+// save catapult function
+void saveCatapult(void) { robotCata.spinFor(60, deg); }
 
 // wings functions
 void toggleWings(void) {
@@ -197,12 +206,27 @@ void toggleWings(void) {
 void toggleLeftWing(void) { leftWing.set(!leftWing.value()); }
 void toggleRightWing(void) { rightWing.set(!rightWing.value()); }
 
-// offensive side auton
+// defenseive side auton
 void auton1(void) {
-  robotDrive.driveFor(24, inches);
+  // setup
+  leftWing.set(true);
+
+  // one ball in
+  drive(20);
+  turn(right, 45);
+  drive(22);
+  drive(-20);
+  drive(22);
+  wait(500, msec);
+
+  // touch pole
+  turn(right, 110);
+  drive(54);
+  turn(left, 25);
+  drive(80);
 }
 
-// defensive side auton
+// offensive side auton
 void auton2(void) { }
 
 // skills test auton

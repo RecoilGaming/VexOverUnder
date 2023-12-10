@@ -67,6 +67,18 @@ void spinCatapultTo(int pos, directionType dir) {
 // auton functions
 void drive(double dst) { robotDrive.driveFor(dst/16, mm); wait(100, msec); }
 void turn(turnType dir, double rot) { robotDrive.turnFor(dir, rot/270, deg); wait(100, msec); }
+void intake() {
+  robotIntake.spin(forward);
+  wait(1, sec);
+  robotIntake.stop();
+  wait(500, msec);
+}
+void outtake() {
+  robotIntake.spin(reverse);
+  wait(1, sec);
+  robotIntake.stop();
+  wait(500, msec);
+}
 
 // robot setup
 void preAuton(void) {
@@ -84,7 +96,7 @@ void preAuton(void) {
 }
 
 // autonomous function
-void autonomous(void) { auton1(); }
+void autonomous(void) { auton2(); }
 
 // driver control function
 void usercontrol(void) {
@@ -92,7 +104,6 @@ void usercontrol(void) {
   robotDrive.setTurnVelocity(100, percent);
   robotDrive.setStopping(brake);
 
-  drive(-20);
   robotCata.spinFor(60, deg);
 
   while (1) {
@@ -208,15 +219,57 @@ void toggleRightWing(void) { rightWing.set(!rightWing.value()); }
 
 // defenseive side auton
 void auton1(void) {
+  // one ball in
+  drive(80);
+  turn(left, 60);
+  robotIntake.spin(reverse);
+  wait(1, sec);
+  robotIntake.stop();
+  wait(500, msec);
+  drive(-10);
+  turn(left, 120);
+  drive(-30);
+}
+
+// offensive side auton
+void auton2(void) {
+  // preload in
+  drive(82);
+  turn(right, 75);
+  drive(1);
+  outtake();
+  drive(-10);
+  turn(right, 140);
+  drive(-30);
+
+  // second ball in
+  drive(5);
+  turn(left, 10);
+  drive(50);
+  intake();
+  turn(right, 135);
+  drive(65);
+  turn(right, 10);
+  outtake();
+  drive(-10);
+  turn(right, 140);
+  drive(-30);
+}
+
+// skills test auton
+void auton3(void) { }
+
+// extra auton ;) (OLD AUTO ONE)
+void auton4(void) {
   // setup
   leftWing.set(true);
 
   // one ball in
   drive(20);
   turn(right, 45);
-  drive(22);
+  drive(22.5);
   drive(-20);
-  drive(22);
+  drive(22.5);
   wait(500, msec);
 
   // touch pole
@@ -225,12 +278,3 @@ void auton1(void) {
   turn(left, 25);
   drive(80);
 }
-
-// offensive side auton
-void auton2(void) { }
-
-// skills test auton
-void auton3(void) { }
-
-// extra auton ;)
-void auton4(void) { }

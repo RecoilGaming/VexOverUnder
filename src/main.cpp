@@ -12,19 +12,19 @@ const gearSetting blueCartridge = ratio6_1;
 brain robotBrain;
 controller robotController = controller(primary);
 
-motor driveLF = motor(PORT19, greenCartridge, true);
-motor driveLB = motor(PORT20, greenCartridge, true);
+motor driveLF = motor(PORT10, greenCartridge, true);
+motor driveLB = motor(PORT9, greenCartridge, true);
 motor_group leftDrive = motor_group(driveLF, driveLB);
-motor driveRF = motor(PORT17, greenCartridge, false);
-motor driveRB = motor(PORT18, greenCartridge, false);
+motor driveRF = motor(PORT20, greenCartridge, false);
+motor driveRB = motor(PORT19, greenCartridge, false);
 motor_group rightDrive = motor_group(driveRF, driveRB);
 drivetrain robotDrive = drivetrain(leftDrive, rightDrive, 4*M_PI, 11, 11, inches, 3/7);
 
-motor robotIntake = motor(PORT16 , blueCartridge, true);
-motor leftCata = motor(PORT15, redCartridge, false);
-motor rightCata = motor(PORT13, redCartridge, true);
+motor robotIntake = motor(PORT8 , blueCartridge, true);
+motor leftCata = motor(PORT2, redCartridge, false);
+motor rightCata = motor(PORT12, redCartridge, true);
 motor_group robotCata = motor_group(leftCata, rightCata);
-rotation cataSensor = rotation(PORT4);
+rotation cataSensor = rotation(PORT11);
 
 digital_out leftWing = digital_out(robotBrain.ThreeWirePort.H);
 digital_out rightWing = digital_out(robotBrain.ThreeWirePort.E);
@@ -67,12 +67,14 @@ void spinCatapultTo(int pos, directionType dir) {
 // auton functions
 void drive(double dst) { robotDrive.driveFor(dst/16, mm); wait(100, msec); }
 void turn(turnType dir, double rot) { robotDrive.turnFor(dir, rot/270, deg); wait(100, msec); }
+
 void intake() {
   robotIntake.spin(forward);
   wait(1, sec);
   robotIntake.stop();
   wait(500, msec);
 }
+
 void outtake() {
   robotIntake.spin(reverse);
   wait(1, sec);

@@ -20,6 +20,7 @@ motor driveRB = motor(PORT10, greenCartridge, false);
 motor_group rightDrive = motor_group(driveRF, driveRB);
 drivetrain robotDrive = drivetrain(leftDrive, rightDrive, 319.19, 280, 280, mm, 2.33333333333333333);
 motor robotIntake = motor(PORT5 , blueCartridge, true);
+motor robotHang = motor(PORT6 , greenCartridge, false);
 motor leftCata = motor(PORT3, redCartridge, false);
 motor rightCata = motor(PORT8, redCartridge, true);
 motor_group robotCata = motor_group(leftCata, rightCata);
@@ -35,18 +36,25 @@ int runDrivetrain(void);
 void toggleIntake(void);
 void startOuttake(void);
 void stopOuttake(void);
+void toggleHang(void);
+void fixHang(void);
 void startCatapult(void);
 void stopCatapult(void);
-void saveCatapult(void);
 void toggleWings(void);
 void toggleLeftWing(void);
 void toggleRightWing(void);
 
 // auton definition
+void auton0(void);
 void auton1(void);
 void auton2(void);
 void auton3(void);
 void auton4(void);
+void auton5(void);
+void auton6(void);
+void auton7(void);
+void auton8(void);
+void auton9(void);
 
 // competition global
 competition Competition;
@@ -55,6 +63,7 @@ competition Competition;
 bool stopLeft = 1;
 bool stopRight = 1;
 bool stopIntake = 0;
+bool hangDown = 0;
 int cataTimer = 0;
 int cataTarget = -1;
 
@@ -66,21 +75,21 @@ void spinCatapultTo(int pos) {
 }
 
 // auton functions
-void drive(double dst) { robotDrive.driveFor(dst, inches); wait(100, msec); }
-void turn(turnType dir, double rot) { robotDrive.turnFor(dir, rot * 5/9, deg); wait(100, msec); } // 9/49, 72/379 ,    8/43
+void drive(double dst, float cd = 0.1) { robotDrive.driveFor(dst, inches); wait(cd, sec); }
+void turn(turnType dir, double rot, float cd = 0.1) { robotDrive.turnFor(dir, rot * 5/9, deg); wait(cd, sec); } // 9/49, 72/379 ,    8/43
 
-void intake() {
+void intake(float cd = 0.5) {
     robotIntake.spin(forward);
     wait(1, sec);
     robotIntake.stop();
-    wait(500, msec);
+    wait(cd, sec);
 }
 
-void outtake() {
+void outtake(float cd = 0.5) {
     robotIntake.spin(reverse);
     wait(1, sec);
     robotIntake.stop();
-    wait(500, msec);
+    wait(cd, sec);
 }
 
 // robot setup
@@ -91,6 +100,11 @@ void preAuton(void) {
     robotDrive.setTurnVelocity(20, percent);
     robotDrive.setStopping(hold);
     robotIntake.setVelocity(100, percent);
+    robotHang.setVelocity(50, percent);
+    robotHang.setStopping(hold);
+
+    robotHang.setPosition(0, degrees);
+
     robotCata.setVelocity(100, percent);
     robotCata.setStopping(hold);
 }
@@ -109,14 +123,15 @@ void usercontrol(void) {
     spinCatapultTo(300);
 
     while (1) {
-        robotController.ButtonL2.pressed(startCatapult);
-        robotController.ButtonR2.pressed(toggleIntake);
-        robotController.ButtonX.pressed(startOuttake);
-        robotController.ButtonX.released(stopOuttake);
-        robotController.ButtonA.pressed(toggleWings);
-        robotController.ButtonB.pressed(saveCatapult);
         robotController.ButtonL1.pressed(toggleLeftWing);
         robotController.ButtonR1.pressed(toggleRightWing);
+        robotController.ButtonL2.pressed(startCatapult);
+        robotController.ButtonR2.pressed(toggleIntake);
+        robotController.ButtonA.pressed(toggleWings);
+        robotController.ButtonB.pressed(fixHang);
+        robotController.ButtonX.pressed(startOuttake);
+        robotController.ButtonX.released(stopOuttake);
+        robotController.ButtonY.pressed(toggleHang);
 
         updateVars();
         stopCatapult();
@@ -189,6 +204,22 @@ void toggleIntake(void) {
 void startOuttake(void) { robotIntake.spin(reverse); }
 void stopOuttake(void) { robotIntake.stop(); }
 
+// hang function
+void toggleHang() {
+    if (hangDown) {
+        robotHang.spinFor(-90, degrees);
+        hangDown = 0;
+    } else {
+        robotHang.spinFor(90, degrees);
+        hangDown = 1;
+    }
+}
+
+void fixHang() {
+    robotHang.setPosition(0, degrees);
+    hangDown = 0;
+}
+
 // catapult function
 void startCatapult(void) {
     spinCatapultTo(270);
@@ -199,9 +230,6 @@ void stopCatapult(void) {
     if (cataTimer <= 0 && abs((int)cataSensor.angle(degrees)-cataTarget) <= 5)
         robotCata.stop();
 }
-
-// save catapult function
-void saveCatapult(void) { spinCatapultTo(300); }
 
 // wings functions
 void toggleWings(void) {
@@ -217,56 +245,56 @@ void toggleWings(void) {
 void toggleLeftWing(void) { leftWing.set(!leftWing.value()); }
 void toggleRightWing(void) { rightWing.set(!rightWing.value()); }
 
-// defensive side auton
+// empty auton
+void auton0(void) { }
+
+// one ball in (offensive)
 void auton1(void) {
     drive(17.5);
-    turn(left, 52);
-    wait(0.5, sec);
-    drive(15);
-    wait(0.5, sec);
-    outtake();
-    wait(0.5, sec);
-    drive(-10);
-    wait(0.5, sec);
-    turn(left, 215);
-    drive(-16);
-    wait(0.5, sec);
-    drive(10);
-    wait(0.5, sec);
-    drive(-15);
-    wait(0.5, sec);
-    drive(10);
+    turn(left, 52, 0.5);
+    drive(15, 0.5);
+    outtake(1);
+    drive(-10, 0.5);
+    turn(left, 215, 0.5);
+    drive(-16, 0.5);
+    drive(10, 0.5);
+    drive(-15, 0.5);
+    drive(10, 0.5);
 }
 
-// offensive side auton
+// one ball in (defensive)
 void auton2(void) {
     drive(17.5);
-    turn(right, 52);
-    wait(0.5, sec);
-    drive(15);
-    wait(0.5, sec);
-    outtake();
-    wait(0.5, sec);
-    drive(-10);
-    wait(0.5, sec);
-    turn(right, 215);
-    drive(-16);
-    wait(0.5, sec);
-    drive(10);
-    wait(0.5, sec);
-    drive(-15);
-    wait(0.5, sec);
-    drive(10);
+    turn(right, 52, 0.5);
+    drive(15, 0.5);
+    outtake(1);
+    drive(-10, 0.5);
+    turn(right, 215, 0.5);
+    drive(-16, 0.5);
+    drive(10, 0.5);
+    drive(-15, 0.5);
+    drive(10, 0.5);
 }
 
-// skills test auton
+// title
 void auton3(void) {
+    drive(17.5);
+    turn(right, 52, 0.5);
+    drive(15, 0.5);
+    outtake(1);
+    drive(-10, 0.5);
+    turn(right, 215, 0.5);
+    drive(-16, 0.5);
+    drive(10, 0.5);
+    drive(-15, 0.5);
+    drive(10, 0.5);
+}
+
+// all balls over (skills)
+void auton9(void) {
     while (1) {
         spinCatapultTo(270);
-        wait(750, msec);
+        wait(1, sec);
         spinCatapultTo(300);
     }
 }
-
-// empty auton
-void auton4(void) { }

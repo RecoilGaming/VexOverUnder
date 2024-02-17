@@ -1,38 +1,7 @@
-#include "vex.h"
-using namespace vex;
-using signature = vision::signature;
-using code = vision::code;
-
-// gear ratios
-const gearSetting redCartridge = ratio36_1;
-const gearSetting greenCartridge = ratio18_1;
-const gearSetting blueCartridge = ratio6_1;
-
-// robot configuration
-brain robotBrain;
-controller robotController = controller(primary);
-
-motor driveLF = motor(PORT2, greenCartridge, true);
-motor driveLB = motor(PORT1, greenCartridge, true);
-motor_group leftDrive = motor_group(driveLF, driveLB);
-motor driveRF = motor(PORT9, greenCartridge, false);
-motor driveRB = motor(PORT10, greenCartridge, false);
-motor_group rightDrive = motor_group(driveRF, driveRB);
-inertial driveInertial = inertial(PORT7);
-smartdrive robotDrive = smartdrive(leftDrive, rightDrive, driveInertial, 319.19, 280, 280, mm, 2.33333333333333333);
-motor robotIntake = motor(PORT5 , blueCartridge, true);
-motor robotHang = motor(PORT6 , greenCartridge, false);
-motor leftCata = motor(PORT3, redCartridge, false);
-motor rightCata = motor(PORT8, redCartridge, true);
-motor_group robotCata = motor_group(leftCata, rightCata);
-rotation cataSensor = rotation(PORT12);
-
-digital_out leftWing = digital_out(robotBrain.ThreeWirePort.B);
-digital_out rightWing = digital_out(robotBrain.ThreeWirePort.A);
+#include "config.h"
 
 // function definitions
 void updateVars(void);
-
 int runDrivetrain(void);
 void toggleIntake(void);
 void startOuttake(void);
@@ -46,7 +15,6 @@ void toggleLeftWing(void);
 void toggleRightWing(void);
 
 // auton definition
-void auton0(void);
 void auton1(void);
 void auton2(void);
 void auton3(void);
@@ -55,7 +23,6 @@ void auton5(void);
 void auton6(void);
 void auton7(void);
 void auton8(void);
-void auton9(void);
 
 // competition global
 competition Competition;
@@ -76,11 +43,6 @@ void spinCatapultTo(int pos, int time=25) {
 }
 
 // auton functions
-void oldDrive(double dst, float cd = 0.1) { robotDrive.driveFor(dst, inches); wait(cd, sec); }
-void oldTurn(turnType dir, double rot, float cd = 0.1) { robotDrive.turnFor(dir, rot * 5/9, deg); wait(cd, sec); } // 9/49, 72/379 ,    8/43
-void oldIntake(float cd = 0.5) { robotIntake.spin(forward); wait(1, sec); robotIntake.stop(); wait(cd, sec); }
-void oldOuttake(float cd = 0.5) { robotIntake.spin(reverse); wait(1, sec); robotIntake.stop(); wait(cd, sec); }
-
 void drive(double dst, float cd = 0.1) { robotDrive.driveFor(dst, inches); wait(cd, sec); }
 void turnTo(double rot, float cd = 0.1) { robotDrive.turnToHeading(rot, degrees); wait(cd, sec); }
 void spinIntake(directionType dir = forward, float cd = 0.1) { robotIntake.spin(dir); wait(cd, sec); }
@@ -92,7 +54,7 @@ void preAuton(void) {
     task controllerInputTask(runDrivetrain);
     
     robotDrive.setDriveVelocity(100, percent);
-    robotDrive.setTurnVelocity(60, percent);
+    robotDrive.setTurnVelocity(80, percent);
     robotDrive.setStopping(hold);
     robotIntake.setVelocity(100, percent);
     robotHang.setVelocity(50, percent);
@@ -108,7 +70,7 @@ void preAuton(void) {
 }
 
 // autonomous function
-void autonomous(void) { auton3(); }
+void autonomous(void) { auton7(); }
 
 // driver control function
 void usercontrol(void) {
@@ -134,9 +96,7 @@ void usercontrol(void) {
         updateVars();
         stopCatapult();
 
-        // robotBrain.Screen.print(cataSensor.angle(deg));
         wait(20, msec);
-        // robotBrain.Screen.clearLine();
     }
 }
 
@@ -163,27 +123,27 @@ int runDrivetrain(void) {
         int speedRight = robotController.Axis3.position() - robotController.Axis1.position();
 
         if (speedLeft < 5 && speedLeft > -5) {
-                if (stopLeft) {
-                        leftDrive.stop();
-                        stopLeft = 0;
-                }
+            if (stopLeft) {
+                leftDrive.stop();
+                stopLeft = 0;
+            }
         } else stopLeft = 1;
 
         if (speedRight < 5 && speedRight > -5) {
-                if (stopRight) {
-                        rightDrive.stop();
-                        stopRight = 0;
-                }
+            if (stopRight) {
+                rightDrive.stop();
+                stopRight = 0;
+            }
         } else stopRight = 1;
         
         if (stopLeft) {
-                leftDrive.setVelocity(speedLeft, percent);
-                leftDrive.spin(forward);
+            leftDrive.setVelocity(speedLeft, percent);
+            leftDrive.spin(forward);
         }
 
         if (stopRight) {
-                rightDrive.setVelocity(speedRight, percent);
-                rightDrive.spin(forward);
+            rightDrive.setVelocity(speedRight, percent);
+            rightDrive.spin(forward);
         }
         
         wait(20, msec);
@@ -240,28 +200,21 @@ void toggleWings(void) {
 void toggleLeftWing(void) { leftWing.set(!leftWing.value()); }
 void toggleRightWing(void) { rightWing.set(!rightWing.value()); }
 
-// empty auton
-void auton0(void) { }
-
 // three balls in (offensive)
 void auton1(void) {
-    // NOTE: Place robot with intake facing the ball under the hang bar with the intake half an inch from the ball.
-
+    turnTo(24);
+    drive(-36, 0.2);
+    // drive(5);
+    // drive(-8, 0.2);
+    // turnTo(0);
+    drive(8);
+    turnTo(116.5);
     spinIntake();
-    drive(2, 0.5);
+    drive(57.5);
     stopIntake();
-    drive(-24);
-    turnTo(315);
-    drive(-33.94);
-    turnTo(270);
-    drive(-10);
-    drive(5);
-    turnTo(0);
-    drive(36);
-    turnTo(270);
-    drive(24);
-    turnTo(180);
-
+    turnTo(257);
+    drive(45, 0.2);
+    drive(-20);
 }
 
 // one ball in + block (defensive)
@@ -295,38 +248,8 @@ void auton3(void) {
     drive(10);
 }
 
-// old one ball in (offensive)
-void auton7(void) {
-    robotDrive.setTurnVelocity(20, percent);
-    oldDrive(17.5);
-    oldTurn(left, 52, 0.5);
-    oldDrive(15, 0.5);
-    oldOuttake(1);
-    oldDrive(-10, 0.5);
-    oldTurn(left, 215, 0.5);
-    oldDrive(-16, 0.5);
-    oldDrive(10, 0.5);
-    oldDrive(-15, 0.5);
-    oldDrive(10, 0.5);
-}
-
-// old one ball in (defensive)
-void auton8(void) {
-    robotDrive.setTurnVelocity(20, percent);
-    oldDrive(17.5);
-    oldTurn(right, 52, 0.5);
-    oldDrive(15, 0.5);
-    oldOuttake(1);
-    oldDrive(-10, 0.5);
-    oldTurn(right, 215, 0.5);
-    oldDrive(-16, 0.5);
-    oldDrive(10, 0.5);
-    oldDrive(-15, 0.5);
-    oldDrive(10, 0.5);
-}
-
 // all balls over (skills)
-void auton9(void) {
+void auton7(void) {
     spinCatapultTo(300);
 
     while (1) {
@@ -334,10 +257,13 @@ void auton9(void) {
         wait(50, msec);
 
         while (1) {
-            if (abs((int)cataSensor.angle(degrees)-300) <= 5) {
+            if (abs((int)cataSensor.angle(degrees)-300) <= 5.5) {
                 robotCata.stop();
                 break;
             }
         } wait(150, msec);
     }
 }
+
+// empty auton (backup)
+void auton8(void) { }
